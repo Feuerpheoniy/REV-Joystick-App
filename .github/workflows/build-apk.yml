@@ -13,11 +13,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Java 8
+      - name: Set up Java 17 for Android SDK tools
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "8"
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -25,6 +25,12 @@ jobs:
       - name: Install legacy Android SDK packages
         run: |
           sdkmanager "platforms;android-22" "build-tools;22.0.1"
+
+      - name: Switch to Java 8 for the legacy Gradle build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
 
       - name: Download official WowWee R.E.V. Android SDK sample
         run: |
