@@ -41,9 +41,11 @@ jobs:
 
       - name: Build debug APK
         working-directory: rev-sdk
+        env:
+          SLAVE_AAPT_TIMEOUT: "60"
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --console=plain --stacktrace --info
+          ./gradlew assembleDebug --no-daemon --max-workers=2 --console=plain --stacktrace --info
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
