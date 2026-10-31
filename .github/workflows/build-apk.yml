@@ -54,19 +54,27 @@ jobs:
           from pathlib import Path
           java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
           s = java.read_text()
-          needle = "Set led to blue color when game start"
-          insert = """// Simple driving mode: hide combat, AI, health and tracking controls.
+          marker = "Set led to blue color when game start"
+          pos = s.find(marker)
+          if pos < 0:
+              raise SystemExit("Drive screen marker not found")
+          line_start = s.rfind("\\n", 0, pos) + 1
+          line_end = s.find("\\n", pos)
+          if line_end < 0:
+              line_end = len(s)
+          line = s[line_start:line_end]
+          if not line.lstrip().startswith("//"):
+              raise SystemExit("Expected source comment at insertion point")
+          controls = """        // Simplified driving mode: hide combat and AI controls.
                   btnAI.setVisibility(View.GONE);
                   btnFire.setVisibility(View.GONE);
                   spTrackingMode.setVisibility(View.GONE);
                   spGun.setVisibility(View.GONE);
                   tvHealth.setVisibility(View.GONE);
                   tvAiHealth.setVisibility(View.GONE);
-
-                  """ + needle
-          if needle not in s:
-              raise SystemExit("Could not find drive-screen insertion marker")
-          java.write_text(s.replace(needle, insert, 1))
+          """
+          s = s[:line_start] + controls + s[line_start:]
+          java.write_text(s)
           strings = Path("app/src/main/res/values/strings.xml")
           t = strings.read_text().replace("<string name=" + chr(34) + "app_name" + chr(34) + ">RevSampleProject</string>", "<string name=" + chr(34) + "app_name" + chr(34) + ">REV Joystick</string>")
           strings.write_text(t)
