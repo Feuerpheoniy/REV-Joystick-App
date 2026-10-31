@@ -47,6 +47,30 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/WowWeeLabs/REV-Android-SDK.git rev-sdk
 
+      - name: Simplify the official drive screen
+        working-directory: rev-sdk
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
+          s = java.read_text()
+          needle = '\\t\\tspGun = (Spinner)view.findViewById(R.id.spGun);'
+          insert = needle + '''
+          // Simple driving mode: hide combat, AI, health and tracking controls.
+          btnAI.setVisibility(View.GONE);
+          btnFire.setVisibility(View.GONE);
+          spTrackingMode.setVisibility(View.GONE);
+          spGun.setVisibility(View.GONE);
+          tvHealth.setVisibility(View.GONE);
+          tvAiHealth.setVisibility(View.GONE);'''
+          if needle not in s:
+              raise SystemExit("Could not find drive-screen controls")
+          java.write_text(s.replace(needle, insert, 1))
+          strings = Path("app/src/main/res/values/strings.xml")
+          t = strings.read_text().replace("<string name=" + chr(34) + "app_name" + chr(34) + ">RevSampleProject</string>", "<string name=" + chr(34) + "app_name" + chr(34) + ">REV Joystick</string>")
+          strings.write_text(t)
+          PY
+
       - name: Disable legacy PNG crunching
         working-directory: rev-sdk
         run: |
