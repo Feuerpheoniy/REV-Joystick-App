@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Set up Java 17 for Android SDK tools
         uses: actions/setup-java@v4
@@ -39,13 +39,27 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/WowWeeLabs/REV-Android-SDK.git rev-sdk
 
+      - name: Disable legacy PNG crunching
+        working-directory: rev-sdk
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/build.gradle")
+          s = p.read_text()
+          needle = '    buildToolsVersion "22.0.1"'
+          replacement = needle + '\n    aaptOptions { cruncherEnabled = false }'
+          if needle not in s:
+              raise SystemExit("Could not find legacy buildToolsVersion setting")
+          p.write_text(s.replace(needle, replacement, 1))
+          PY
+
       - name: Build debug APK
         working-directory: rev-sdk
         env:
-          SLAVE_AAPT_TIMEOUT: "60"
+          SLAVE_AAPT_TIMEOUT: "180"
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --max-workers=2 --console=plain --stacktrace --info
+          ./gradlew assembleDebug --no-daemon --max-workers=2 --console=plain --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
