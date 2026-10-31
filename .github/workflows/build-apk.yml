@@ -54,8 +54,8 @@ jobs:
           from pathlib import Path
           java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
           s = java.read_text()
-          needle = "        // Set led to blue color when game start"
-          insert = """        // Simple driving mode: hide combat, AI, health and tracking controls.
+          needle = "Set led to blue color when game start"
+          insert = """// Simple driving mode: hide combat, AI, health and tracking controls.
                   btnAI.setVisibility(View.GONE);
                   btnFire.setVisibility(View.GONE);
                   spTrackingMode.setVisibility(View.GONE);
@@ -63,9 +63,9 @@ jobs:
                   tvHealth.setVisibility(View.GONE);
                   tvAiHealth.setVisibility(View.GONE);
 
-          """ + needle
+                  """ + needle
           if needle not in s:
-              raise SystemExit("Could not find safe insertion point for simplified drive screen")
+              raise SystemExit("Could not find drive-screen insertion marker")
           java.write_text(s.replace(needle, insert, 1))
           strings = Path("app/src/main/res/values/strings.xml")
           t = strings.read_text().replace("<string name=" + chr(34) + "app_name" + chr(34) + ">RevSampleProject</string>", "<string name=" + chr(34) + "app_name" + chr(34) + ">REV Joystick</string>")
