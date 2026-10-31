@@ -55,15 +55,11 @@ jobs:
           java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
           s = java.read_text()
           marker = "Set led to blue color when game start"
-          pos = s.find(marker)
-          if pos < 0:
+          lines = s.splitlines(keepends=True)
+          idx = next((i for i, line in enumerate(lines) if marker in line), None)
+          if idx is None:
               raise SystemExit("Drive screen marker not found")
-          line_start = s.rfind("\\n", 0, pos) + 1
-          line_end = s.find("\\n", pos)
-          if line_end < 0:
-              line_end = len(s)
-          line = s[line_start:line_end]
-          if not line.lstrip().startswith("//"):
+          if not lines[idx].lstrip().startswith("//"):
               raise SystemExit("Expected source comment at insertion point")
           controls = """        // Simplified driving mode: hide combat and AI controls.
                   btnAI.setVisibility(View.GONE);
@@ -73,8 +69,8 @@ jobs:
                   tvHealth.setVisibility(View.GONE);
                   tvAiHealth.setVisibility(View.GONE);
           """
-          s = s[:line_start] + controls + s[line_start:]
-          java.write_text(s)
+          lines.insert(idx, controls)
+          java.write_text("".join(lines))
           strings = Path("app/src/main/res/values/strings.xml")
           t = strings.read_text().replace("<string name=" + chr(34) + "app_name" + chr(34) + ">RevSampleProject</string>", "<string name=" + chr(34) + "app_name" + chr(34) + ">REV Joystick</string>")
           strings.write_text(t)
