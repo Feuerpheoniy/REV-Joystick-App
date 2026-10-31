@@ -25,9 +25,17 @@ jobs:
         with:
           packages: platform-tools
 
+      - name: Install legacy Android SDK runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lib32stdc++6 lib32z1
+
       - name: Install legacy Android SDK packages
         run: |
           sdkmanager "platforms;android-22" "build-tools;22.0.1"
+          file "$ANDROID_HOME/build-tools/22.0.1/aapt"
+          ldd "$ANDROID_HOME/build-tools/22.0.1/aapt" || true
+          "$ANDROID_HOME/build-tools/22.0.1/aapt" version
 
       - name: Switch to Java 8 for the legacy Gradle build
         uses: actions/setup-java@v4
@@ -59,7 +67,7 @@ jobs:
           SLAVE_AAPT_TIMEOUT: "180"
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --max-workers=2 --console=plain --stacktrace
+          ./gradlew assembleDebug --no-daemon --max-workers=1 --console=plain --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
