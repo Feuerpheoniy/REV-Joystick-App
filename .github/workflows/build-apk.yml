@@ -32,7 +32,7 @@ jobs:
           java-version: "8"
       - name: Download official WowWee R.E.V. Android SDK sample
         run: git clone --depth 1 https://github.com/WowWeeLabs/REV-Android-SDK.git rev-sdk
-      - name: Add Flux Capacitor time-travel button
+      - name: Add always-visible time-travel button
         working-directory: rev-sdk
         run: |
           python3 - <<'PY'
@@ -48,33 +48,32 @@ jobs:
                   android:layout_alignParentBottom="true"
                   android:layout_marginBottom="12dp"
                   android:background="@drawable/flux_button"
-                  android:text="⚡ ZEITREISE"
+                  android:text="ZEITREISE"
                   android:textColor="#EAFBFF"
                   android:textStyle="bold"
                   android:textSize="16sp"
                   android:elevation="12dp" />
           '''
           if "btn_time_travel" not in x:
-              x = x.replace("    <FrameLayout", button + "\n    <FrameLayout")
+              x = x.replace("</RelativeLayout>", button + "\n</RelativeLayout>")
           xml.write_text(x)
           java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
           s = java.read_text()
-          marker = "Set led to blue color when game start"
-          idx = s.find(marker)
-          if idx < 0: raise SystemExit("Drive screen insertion point not found")
-          addition = """Button timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
-          timeTravel.bringToFront();
-          timeTravel.setOnClickListener(new View.OnClickListener() {
-              @Override public void onClick(View v) {
-                  android.widget.Toast.makeText(getActivity(), "Zeitreise-Effekt folgt im nächsten Update", android.widget.Toast.LENGTH_SHORT).show();
-              }
-          });
+          marker = "\t\t// Set led to blue color when game start"
+          if "btn_time_travel" not in s:
+              idx = s.find(marker)
+              if idx < 0: raise SystemExit("Could not locate exact DriveViewFragment insertion comment")
+              addition = """\t\tButton timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
+          \t\ttimeTravel.setOnClickListener(new View.OnClickListener() {
+          \t\t\t@Override public void onClick(View v) {
+          \t\t\t\tandroid.widget.Toast.makeText(getActivity(), "Zeitreise-Sound wird im nächsten Schritt integriert", android.widget.Toast.LENGTH_SHORT).show();
+          \t\t\t}
+          \t\t});
+          \t\ttimeTravel.bringToFront();
+
           """
-          s = s[:idx] + addition + s[idx:]
+              s = s[:idx] + addition + s[idx:]
           java.write_text(s)
-          strings = Path("app/src/main/res/values/strings.xml")
-          t = strings.read_text().replace("<string name=" + chr(34) + "app_name" + chr(34) + ">RevSampleProject</string>", "<string name=" + chr(34) + "app_name" + chr(34) + ">REV Joystick - Time Travel</string>")
-          strings.write_text(t)
           drawable = Path("app/src/main/res/drawable/flux_button.xml")
           drawable.parent.mkdir(parents=True, exist_ok=True)
           drawable.write_text('''<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
@@ -93,7 +92,9 @@ jobs:
           s = p.read_text()
           needle = '    buildToolsVersion "22.0.1"'
           if needle not in s: raise SystemExit("Could not find legacy buildToolsVersion setting")
-          p.write_text(s.replace(needle, needle + '\n    aaptOptions { cruncherEnabled = false }', 1))
+          if "cruncherEnabled = false" not in s:
+              s = s.replace(needle, needle + '\n    aaptOptions { cruncherEnabled = false }', 1)
+          p.write_text(s)
           PY
       - name: Build debug APK
         working-directory: rev-sdk
@@ -102,10 +103,12 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --max-workers=1 --console=plain --stacktrace
-      - name: Locate generated APK
+      - name: Verify APK output
         run: |
-          find rev-sdk/app/build/outputs -type f -name '*.apk' -print
-          test -n "$(find rev-sdk/app/build/outputs -type f -name '*.apk' -print -quit)"
+          APK="$(find rev-sdk/app/build/outputs -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          test -s "$APK"
+          echo "APK generated: $APK"
       - uses: actions/upload-artifact@v4
         with:
           name: REV-Time-Travel-debug-APK
