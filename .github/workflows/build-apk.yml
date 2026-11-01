@@ -83,6 +83,49 @@ jobs:
               <padding android:left="10dp" android:top="6dp" android:right="10dp" android:bottom="6dp"/>
           </shape>''')
           PY
+      - name: Improve safe joystick Bluetooth drive loop
+        working-directory: rev-sdk
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
+          s = p.read_text()
+          start = s.find("class JoystickRunnable implements Runnable {")
+          end = s.find("\n\t//================================================================================\n\t// REVRobot callback", start)
+          if start < 0 or end < 0:
+              raise SystemExit("Could not locate JoystickRunnable block")
+          replacement = """class JoystickRunnable implements Runnable {
+          \t\tpublic void run() {
+          \t\t\tboolean wasMoving = false;
+          \t\t\twhile (!Thread.currentThread().isInterrupted()) {
+          \t\t\t\tboolean moving = driveEnabled && (movementVector[0] != 0 || movementVector[1] != 0);
+          \t\t\t\tREVRobot robot = REVRobotFinder.getInstance().firstConnectedREV();
+          \t\t\t\tif (robot != null && !robot.isDead()) {
+          \t\t\t\t\tif (moving) {
+          \t\t\t\t\t\tsendVector[0] = movementVector[0];
+          \t\t\t\t\t\tsendVector[1] = movementVector[1];
+          \t\t\t\t\t\tif (sendVector[1] < 0) {
+          \t\t\t\t\t\t\tsendVector[0] = -sendVector[0];
+          \t\t\t\t\t\t}
+          \t\t\t\t\t\trobot.revDrive(sendVector, DEFAULT_DRIVE_SPEED, DEFAULT_TURN_SPEED);
+          \t\t\t\t\t\twasMoving = true;
+          \t\t\t\t\t} else if (wasMoving) {
+          \t\t\t\t\t\trobot.revDrive(new float[]{0, 0}, DEFAULT_DRIVE_SPEED, DEFAULT_TURN_SPEED);
+          \t\t\t\t\t\twasMoving = false;
+          \t\t\t\t\t}
+          \t\t\t\t}
+          \t\t\t\ttry {
+          \t\t\t\t\tThread.sleep(50);
+          \t\t\t\t} catch (InterruptedException e) {
+          \t\t\t\t\tThread.currentThread().interrupt();
+          \t\t\t\t}
+          \t\t\t}
+          \t\t}
+          \t}"""
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s)
+          PY
       - name: Disable legacy PNG crunching
         working-directory: rev-sdk
         run: |
