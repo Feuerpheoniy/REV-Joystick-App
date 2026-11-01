@@ -55,7 +55,7 @@ jobs:
                   android:elevation="12dp" />
           '''
           if "btn_time_travel" not in x:
-              x = x.replace("    <FrameLayout", button + "\\n    <FrameLayout")
+              x = x.replace("    <FrameLayout", button + "\n    <FrameLayout")
           xml.write_text(x)
           java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
           s = java.read_text()
