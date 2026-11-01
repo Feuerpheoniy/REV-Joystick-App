@@ -126,6 +126,55 @@ jobs:
           s = s[:start] + replacement + s[end:]
           p.write_text(s)
           PY
+      - name: Manage joystick thread with fragment lifecycle
+        working-directory: rev-sdk
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
+          s = p.read_text()
+          field = "\tprotected boolean isJoystickTimerRunning = false;"
+          if "private Thread joystickThread;" not in s:
+              s = s.replace(field, field + "\n\tprivate Thread joystickThread;", 1)
+          old = """\t\tThread newThread = new Thread(new JoystickRunnable());
+          \t\tnewThread.start();
+          \t\tisJoystickTimerRunning = true;"""
+          if old in s:
+              s = s.replace(old, "\t\tstartJoystickLoop();", 1)
+          old_resume = """\t\tif(!isJoystickTimerRunning) {
+          \t\t\tThread newThread = new Thread(new JoystickRunnable());
+          \t\t\tnewThread.start();
+          \t\t\tisJoystickTimerRunning = true;
+          \t\t}"""
+          if old_resume in s:
+              s = s.replace(old_resume, "\t\tstartJoystickLoop();", 1)
+          if "private void startJoystickLoop()" not in s:
+              marker = "\n\tprivate void resumeDriveViewFragment() {"
+              methods = """
+          \n\tprivate synchronized void startJoystickLoop() {
+          \t\tif (joystickThread == null || !joystickThread.isAlive()) {
+          \t\t\tisJoystickTimerRunning = true;
+          \t\t\tjoystickThread = new Thread(new JoystickRunnable(), "REV-Joystick");
+          \t\t\tjoystickThread.start();
+          \t\t}
+          \t}
+
+          \tprivate synchronized void stopJoystickLoop() {
+          \t\tisJoystickTimerRunning = false;
+          \t\tif (joystickThread != null) {
+          \t\t\tjoystickThread.interrupt();
+          \t\t\tjoystickThread = null;
+          \t\t}
+          \t}
+          """
+              if marker not in s: raise SystemExit("Could not find lifecycle helper insertion point")
+              s = s.replace(marker, methods + marker, 1)
+          s = s.replace("\t\tisJoystickTimerRunning = false;\n\t}\n\n\t@Override\n\tpublic void onPause()", "\t\tstopJoystickLoop();\n\t}\n\n\t@Override\n\tpublic void onPause()", 1)
+          pause_marker = "\t\tif(joystickTimer != null) {\n\t\t\tjoystickTimer.cancel();\n\t\t\tjoystickTimer.purge();\n\t\t\tjoystickTimer = null;\n\t\t}\n\t\tisJoystickTimerRunning = false;"
+          if pause_marker in s:
+              s = s.replace(pause_marker, pause_marker.replace("\t\tisJoystickTimerRunning = false;", "\t\tstopJoystickLoop();"), 1)
+          p.write_text(s)
+          PY
       - name: Disable legacy PNG crunching
         working-directory: rev-sdk
         run: |
