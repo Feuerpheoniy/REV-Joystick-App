@@ -93,7 +93,7 @@ jobs:
           s = p.read_text()
           needle = '    buildToolsVersion "22.0.1"'
           if needle not in s: raise SystemExit("Could not find legacy buildToolsVersion setting")
-          p.write_text(s.replace(needle, needle + '\\n    aaptOptions { cruncherEnabled = false }', 1))
+          p.write_text(s.replace(needle, needle + '\n    aaptOptions { cruncherEnabled = false }', 1))
           PY
       - name: Build debug APK
         working-directory: rev-sdk
