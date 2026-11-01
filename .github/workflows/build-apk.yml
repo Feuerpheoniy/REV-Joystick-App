@@ -186,6 +186,13 @@ jobs:
           if needle not in s: raise SystemExit("Could not find legacy buildToolsVersion setting")
           if "cruncherEnabled = false" not in s:
               s = s.replace(needle, needle + chr(10) + '    aaptOptions { cruncherEnabled = false }', 1)
+          # Android 15 blockiert Installationen mit targetSdkVersion unter 24.
+          target = '    targetSdkVersion 22'
+          if target not in s:
+              raise SystemExit("Could not find expected targetSdkVersion 22 setting")
+          s = s.replace(target, '    targetSdkVersion 24', 1)
+          if '    targetSdkVersion 24' not in s:
+              raise SystemExit("targetSdkVersion was not updated")
           p.write_text(s)
           PY
       - name: Build debug APK
