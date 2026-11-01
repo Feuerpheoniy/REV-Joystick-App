@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - ".github/workflows/build-apk.yml"
-      - "app/src/main/res/raw/**"
 permissions:
   contents: read
 jobs:
@@ -12,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -33,49 +31,12 @@ jobs:
           distribution: temurin
           java-version: "8"
       - name: Download official WowWee R.E.V. Android SDK sample
-        run: |
-          git clone --depth 1 https://github.com/WowWeeLabs/REV-Android-SDK.git rev-sdk
-          mkdir -p rev-sdk/app/src/main/res/raw
-          cp app/src/main/res/raw/startup.mp3 rev-sdk/app/src/main/res/raw/
-          cp app/src/main/res/raw/time_travel.mp3 rev-sdk/app/src/main/res/raw/
-      - name: Add Flux Capacitor button and sound playback
+        run: git clone --depth 1 https://github.com/WowWeeLabs/REV-Android-SDK.git rev-sdk
+      - name: Add Flux Capacitor time-travel button
         working-directory: rev-sdk
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
-          s = java.read_text()
-          s = s.replace("import android.graphics.Bitmap;", "import android.graphics.Bitmap;\\nimport android.media.MediaPlayer;")
-          s = s.replace("private Button btnFire;", "private Button btnFire;\\n\\tprivate MediaPlayer effectPlayer;")
-          marker = "Set led to blue color when game start"
-          idx = s.find(marker)
-          if idx < 0: raise SystemExit("Drive screen insertion point not found")
-          addition = """// Custom startup sound and always-visible time-travel control.
-          playEffect(R.raw.startup);
-          Button timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
-          timeTravel.bringToFront();
-          timeTravel.setOnClickListener(new View.OnClickListener() {
-              @Override public void onClick(View v) { playEffect(R.raw.time_travel); }
-          });
-          """
-          s = s[:idx] + addition + s[idx:]
-          method = """
-          private void playEffect(int soundResource) {
-              if (effectPlayer != null) { effectPlayer.release(); effectPlayer = null; }
-              effectPlayer = MediaPlayer.create(getActivity(), soundResource);
-              if (effectPlayer != null) {
-                  effectPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                      @Override public void onCompletion(MediaPlayer player) {
-                          player.release();
-                          if (effectPlayer == player) effectPlayer = null;
-                      }
-                  });
-                  effectPlayer.start();
-              }
-          }
-          """
-          s = s.replace("private void resumeDriveViewFragment()", method + "\\nprivate void resumeDriveViewFragment()")
-          java.write_text(s)
           xml = Path("app/src/main/res/layout/fragment_drive.xml")
           x = xml.read_text()
           button = '''
@@ -93,8 +54,24 @@ jobs:
                   android:textSize="16sp"
                   android:elevation="12dp" />
           '''
-          if "btn_time_travel" not in x: x = x.replace("    <FrameLayout", button + "\\n    <FrameLayout")
+          if "btn_time_travel" not in x:
+              x = x.replace("    <FrameLayout", button + "\\n    <FrameLayout")
           xml.write_text(x)
+          java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
+          s = java.read_text()
+          marker = "Set led to blue color when game start"
+          idx = s.find(marker)
+          if idx < 0: raise SystemExit("Drive screen insertion point not found")
+          addition = """Button timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
+          timeTravel.bringToFront();
+          timeTravel.setOnClickListener(new View.OnClickListener() {
+              @Override public void onClick(View v) {
+                  android.widget.Toast.makeText(getActivity(), "Zeitreise-Effekt folgt im nächsten Update", android.widget.Toast.LENGTH_SHORT).show();
+              }
+          });
+          """
+          s = s[:idx] + addition + s[idx:]
+          java.write_text(s)
           strings = Path("app/src/main/res/values/strings.xml")
           t = strings.read_text().replace("<string name=" + chr(34) + "app_name" + chr(34) + ">RevSampleProject</string>", "<string name=" + chr(34) + "app_name" + chr(34) + ">REV Joystick - Time Travel</string>")
           strings.write_text(t)
