@@ -93,7 +93,7 @@ jobs:
           needle = '    buildToolsVersion "22.0.1"'
           if needle not in s: raise SystemExit("Could not find legacy buildToolsVersion setting")
           if "cruncherEnabled = false" not in s:
-              s = s.replace(needle, needle + '\n    aaptOptions { cruncherEnabled = false }', 1)
+              s = s.replace(needle, needle + chr(10) + '    aaptOptions { cruncherEnabled = false }', 1)
           p.write_text(s)
           PY
       - name: Build debug APK
