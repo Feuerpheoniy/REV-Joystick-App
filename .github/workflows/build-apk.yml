@@ -71,7 +71,7 @@ jobs:
           if "btn_time_travel" not in s:
               idx = s.find(marker)
               if idx < 0: raise SystemExit("Could not locate DriveViewFragment insertion comment")
-              addition = """\t\tButton timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
+              addition = """\t\tfinal Button timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
           timeTravel.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.flux_capacitor), null, null);
           timeTravel.setCompoundDrawablePadding(2);
           timeTravel.setPadding(12, 4, 12, 4);
