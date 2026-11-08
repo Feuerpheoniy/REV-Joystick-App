@@ -49,6 +49,8 @@ jobs:
                   android:layout_marginBottom="12dp"
                   android:background="@drawable/flux_button"
                   android:text="ZEITREISE"
+                  android:contentDescription="Zeitreise-Simulation starten"
+                  android:minHeight="104dp"
                   android:textColor="#EAFBFF"
                   android:textStyle="bold"
                   android:textSize="14sp"
@@ -69,6 +71,7 @@ jobs:
           timeTravel.setPadding(12, 4, 12, 4);
           \t\ttimeTravel.setOnClickListener(new View.OnClickListener() {
           \t\t\t@Override public void onClick(View v) {
+                v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
           \t\t\t\tfinal android.media.ToneGenerator fluxTone = new android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 90);
                 fluxTone.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 180);
                 handler.postDelayed(new Runnable() { @Override public void run() { fluxTone.startTone(android.media.ToneGenerator.TONE_DTMF_5, 180); } }, 220);
