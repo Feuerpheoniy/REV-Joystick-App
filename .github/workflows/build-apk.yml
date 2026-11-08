@@ -77,15 +77,27 @@ jobs:
           timeTravel.setPadding(12, 4, 12, 4);
           \t\ttimeTravel.setOnClickListener(new View.OnClickListener() {
           \t\t\t@Override public void onClick(View v) {
+                if (!timeTravel.isEnabled()) return;
+                timeTravel.setEnabled(false);
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
           \t\t\t\tfinal android.media.MediaPlayer timeTravelPlayer = android.media.MediaPlayer.create(getActivity(), R.raw.time_travel);
                 if (timeTravelPlayer != null) {
                     timeTravelPlayer.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener() {
                         @Override public void onCompletion(android.media.MediaPlayer player) {
                             player.release();
+                            timeTravel.setEnabled(true);
+                        }
+                    });
+                    timeTravelPlayer.setOnErrorListener(new android.media.MediaPlayer.OnErrorListener() {
+                        @Override public boolean onError(android.media.MediaPlayer player, int what, int extra) {
+                            player.release();
+                            timeTravel.setEnabled(true);
+                            return true;
                         }
                     });
                     timeTravelPlayer.start();
+                } else {
+                    timeTravel.setEnabled(true);
                 }
           \t\t\t}
           \t\t});
