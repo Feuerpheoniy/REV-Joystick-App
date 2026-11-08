@@ -67,10 +67,10 @@ jobs:
           xml.write_text(x)
           java = Path("app/src/main/java/com/wowwee/revandroidsampleproject/fragments/DriveViewFragment.java")
           s = java.read_text()
-          marker = "\t\t// Set led to blue color when game start"
+          marker = "// Set led to blue color when game start"
           if "btn_time_travel" not in s:
               idx = s.find(marker)
-              if idx < 0: raise SystemExit("Could not locate exact DriveViewFragment insertion comment")
+              if idx < 0: raise SystemExit("Could not locate DriveViewFragment insertion comment")
               addition = """\t\tButton timeTravel = (Button)view.findViewById(R.id.btn_time_travel);
           timeTravel.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.flux_capacitor), null, null);
           timeTravel.setCompoundDrawablePadding(2);
