@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -32,6 +33,11 @@ jobs:
           java-version: "8"
       - name: Download official WowWee R.E.V. Android SDK sample
         run: git clone --depth 1 https://github.com/WowWeeLabs/REV-Android-SDK.git rev-sdk
+      - name: Copy uploaded time-travel sound into Android resources
+        run: |
+          test -s time_travel.mp3
+          mkdir -p rev-sdk/app/src/main/res/raw
+          cp time_travel.mp3 rev-sdk/app/src/main/res/raw/time_travel.mp3
       - name: Add always-visible time-travel button
         working-directory: rev-sdk
         run: |
@@ -72,11 +78,15 @@ jobs:
           \t\ttimeTravel.setOnClickListener(new View.OnClickListener() {
           \t\t\t@Override public void onClick(View v) {
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
-          \t\t\t\tfinal android.media.ToneGenerator fluxTone = new android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 90);
-                fluxTone.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 180);
-                handler.postDelayed(new Runnable() { @Override public void run() { fluxTone.startTone(android.media.ToneGenerator.TONE_DTMF_5, 180); } }, 220);
-                handler.postDelayed(new Runnable() { @Override public void run() { fluxTone.startTone(android.media.ToneGenerator.TONE_DTMF_9, 260); } }, 470);
-                handler.postDelayed(new Runnable() { @Override public void run() { fluxTone.release(); } }, 820);
+          \t\t\t\tfinal android.media.MediaPlayer timeTravelPlayer = android.media.MediaPlayer.create(getActivity(), R.raw.time_travel);
+                if (timeTravelPlayer != null) {
+                    timeTravelPlayer.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener() {
+                        @Override public void onCompletion(android.media.MediaPlayer player) {
+                            player.release();
+                        }
+                    });
+                    timeTravelPlayer.start();
+                }
           \t\t\t}
           \t\t});
           \t\ttimeTravel.bringToFront();
